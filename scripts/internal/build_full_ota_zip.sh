@@ -76,7 +76,8 @@ GENERATE_OTA_METADATA()
     DEVICE="$(grep "^device" <<< "$BUILD_INFO" | cut -d "=" -f 2 -s)"
     RELEASE="$(grep "^os_version" <<< "$BUILD_INFO" | cut -d "=" -f 2 -s)"
     INCREMENTAL="$(grep "^build_incremental" <<< "$BUILD_INFO" | cut -d "=" -f 2 -s)"
-    TIMESTAMP="$(grep "^build_date" <<< "$BUILD_INFO" | cut -d "=" -f 2 -s)"
+    #TIMESTAMP="$(grep "^build_date" <<< "$BUILD_INFO" | cut -d "=" -f 2 -s)"
+    TIMESTAMP="$(grep "^timestamp" <<< "$BUILD_INFO" | cut -d "=" -f 2 -s)"
     SECURITY_PATCH_LEVEL="$(grep "^security_patch" <<< "$BUILD_INFO" | cut -d "=" -f 2 -s)"
     FINGERPRINT="$(grep "^source_fingerprint" <<< "$BUILD_INFO" | cut -d "=" -f 2 -s)"
 
@@ -85,6 +86,12 @@ GENERATE_OTA_METADATA()
     # https://android.googlesource.com/platform/build/+/refs/tags/android-15.0.0_r1/tools/releasetools/ota_utils.py#259
     if [ -f "$PROTO_FILE" ]; then
         local MESSAGE
+
+#	Modified AI
+	[ -z "$TIMESTAMP" ] && echo "ERROR: TIMESTAMP is empty"
+	[ -z "$INCREMENTAL" ] && echo "WARNING: build_incremental is empty"
+	[ -z "$SECURITY_PATCH_LEVEL" ] && echo "WARNING: security_patch is empty"
+	#[ -z "$" ] && echo "WARNING: build date is empty"
 
         MESSAGE+="type: BLOCK"
         MESSAGE+=", precondition: {device: \\\"$DEVICE\\\"}"
@@ -288,8 +295,9 @@ EVAL "rm -f \"$TMP_DIR/rom.zip\"" || exit 1
 # https://android.googlesource.com/platform/build/+/refs/tags/android-15.0.0_r1/tools/releasetools/common.py#3609
 # https://android.googlesource.com/platform/build/+/refs/tags/android-15.0.0_r1/tools/releasetools/ota_utils.py#184
 # https://android.googlesource.com/platform/build/+/refs/tags/android-15.0.0_r1/tools/releasetools/ota_utils.py#186
-EVAL "cd \"$TMP_DIR\" && 7z a -tzip -mx=0 -mmt=$(nproc) $TMP_DIR/rom.zip -r *.patch.dat -ir!META-INF/com/android/* -i!*.new.dat.br" || exit 1
-EVAL "cd \"$TMP_DIR\" && 7z a -tzip -mx=3 -mmt=$(nproc) $TMP_DIR/rom.zip -r * -xr!META-INF/com/android/* -x!*.new.dat.br -x!*.patch.dat -x!rom.zip" || exit 1
+#edited to fix cd errors
+EVAL "cd \"$TMP_DIR\" && 7z a -tzip -mx=0 -mmt=$(nproc) \"$TMP_DIR/rom.zip\" -r *.patch.dat -ir!META-INF/com/android/* -i!*.new.dat.br" || exit 1
+EVAL "cd \"$TMP_DIR\" && 7z a -tzip -mx=3 -mmt=$(nproc) \"$TMP_DIR/rom.zip\" -r * -xr!META-INF/com/android/* -x!*.new.dat.br -x!*.patch.dat -x!rom.zip" || exit 1
 
 if ! $DEBUG || $ROM_IS_OFFICIAL; then
     LOG "- Signing zip"
